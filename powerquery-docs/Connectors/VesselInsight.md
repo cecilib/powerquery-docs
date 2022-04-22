@@ -26,7 +26,6 @@ Before you can sign in to Vessel Insight, you must have an organization account 
  
 ## Capabilities Supported
 * Import
-* Advanced option with TQL
 
 ## Connect to Vessel Insight
 
@@ -188,7 +187,7 @@ Explanation of the query:
         {ColumnNames{4}, "AE2 Power"}})​
     in​
         #"Renamed Columns" ​
-```
+    ```
 
 ## Limitations and issues
 
@@ -204,7 +203,7 @@ You should be aware of the following limitations and issues associated with acce
 
 For additional guidelines on accessing Vessel Insight data, see [The Getting started guide](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Fwww.kongsberg.com%2Fglobalassets%2Fdigital%2Fsolutions%2Fvessel-insight%2Fpowerbi-gsx.pptx&wdOrigin=BROWSELINK).
 
-## Next steps
+## Recommended content
 
 You may also find the following Vessel Insight information useful:
 
