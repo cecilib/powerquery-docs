@@ -65,9 +65,11 @@ Here you have the options to select:
 * **Advanced** - write custom TQL queries. See [TQL query example](#tql-query-example)
 * **Vessel Insight Data (deprecated)** - time series data for your fleets in old asset hierarchy
 * **Vessel Insight Data 2.0** - time series data for your fleets in new asset hierarchy. Only tags with data will be shown
-* **Voyage** - voyage data
+* **Voyage** - voyage history and location data
 
-You can also provide any optional input parameters required for the selected items. For more information about these parameters, see [Optional input parameters](#optional-input-parameters). I you don't input parameters, you will get the latest value.
+You can also provide any optional input parameters required for the selected items. For more information about these parameters, see [Optional input parameters](#optional-input-parameters). I you don't input parameters, you will get the latest value by default.
+
+![Default value.](./media/VesselInsight/navigator-default.png)
 
 You can **Load** the selected time series data, which brings the one table for each selected time series tag into Power BI Desktop, or you can select **Transform Data** to edit the query, which opens Power Query Editor. You can then filter and refine the set of data you want to use, and then load that refined set of data into Power BI Desktop. 
 
