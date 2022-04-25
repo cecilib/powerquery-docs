@@ -62,14 +62,20 @@ Once the connection is established, you can preview and select data within the *
 
 
 Here you have the options to select:
-* **Advanced** - write custom TQL queries. See [TQL query example](#tql-query-example)
+* **Advanced** - write custom TQL queries (native). For advanced Kongsberg users
 * **Vessel Insight Data (deprecated)** - time series data for your fleets in old asset hierarchy
 * **Vessel Insight Data 2.0** - time series data for your fleets in new asset hierarchy. Only tags with data will be shown
-* **Voyage** - voyage history and location data
+* **Voyage** - voyage history and location data from AIS
 
-You can also provide any optional input parameters required for the selected items. For more information about these parameters, see [Optional input parameters](#optional-input-parameters). I you don't input parameters, you will get the latest value by default.
+
+You can provide any optional input parameters required for the selected items. For more information about these parameters, see [Optional input parameters](#optional-input-parameters). 
+
+If you don't input parameters for **Vessel Insight Data 2.0**, you will get the latest value by default. 
 
 ![Default value.](./media/VesselInsight/navigator-default.png)
+
+For **Voyage**, you need to input IMOs that you want to fetch data for.
+![Voyage IMO parameter.](./media/VesselInsight/navigator-options-voyage-IMO.PNG)
 
 You can **Load** the selected time series data, which brings the one table for each selected time series tag into Power BI Desktop, or you can select **Transform Data** to edit the query, which opens Power Query Editor. You can then filter and refine the set of data you want to use, and then load that refined set of data into Power BI Desktop. 
 
@@ -80,9 +86,11 @@ You can **Load** the selected time series data, which brings the one table for e
 
 ## Optional input parameters
 
-When you've selected the Vessel Insight data you want to load or transform in the Power Query **Navigator** dialog box, you can also limit the amount of data by selecting a set of optional input parameters. 
 
-![Optional input parameters.](./media/VesselInsight/navigator-options.png)
+#### Vessel Insight Data 2.0
+When you import time series data through the Vessel Insight Data 2.0 node and you've selected the tags you want to load or transform in the Power Query **Navigator** dialog box, you can also limit the amount of data by selecting a set of optional input parameters.
+
+![Optional input parameters for Vessel Insight Data.](./media/VesselInsight/navigator-options.png)
 
 These input parameters are:
 
@@ -95,101 +103,19 @@ These input parameters are:
 * **End** (Time:Period), e.g. 2019-10-08T01:00:00Z (optional) -  filter on range by inserting end date and time here. Possible to set "today" and "now". Requires setting Time: Period. 
 * **Custom** (Time: Custom), e.g. |> takebefore now 5 (optional) - add custom query to filter on number of values. "|> takebefore now 5" means take 5 values before the time now. Requires Time: Custom
 
+ When importing aggregated timeseries, the connector will return avg, min, max and count by default.
+
 If you are importing multiple tags, it can be cumbersome to input the parameters manually for each tag. In this case, we recommend to use **Power Query parameters** for Start and End date in the Power Query Editor: [Power Query parameters](https://docs.microsoft.com/en-us/power-query/power-query-query-parameters)
 
-In **Advanced Editor**, do the following updates for all the tables:
+#### Voyage
+When you import voyage data through the Voyage node, you can limit the amount of data for "History" and "Location History" table by setting a set of optional input parameters.
 
-Change the #"Invoked FunctionNode_1" and replace the 3rd (Start parameter) and 4th (End parameter) variable to the new Power Query parameters.
+![Optional input parameters for voyage .](./media/VesselInsight/navigator-options-voyage.png)
 
-![Parameter variables to replace.](./media/VesselInsight/power-query-parameters1.png)
-
-![Updated parameters.](./media/VesselInsight/power-query-parameters2.png)
-
-After replacing the variables in Advanced editor, click **Parameter1** and **Parameter2** to change the values for Start and End date. This will affect the date range  filtering when refreshing the data.
-
-![Updating parameter values.](./media/VesselInsight/power-query-parameters3.png)
-
-## TQL query example
-For advanced users, TQL queries can be used to transform and filter data when importing into Power BI. Below is an example to combine multiple tags into one table using TQL.
-
-```TQL
-let​
-    Source = VesselInsight.Contents(),​
-    advanced_node_root = Source{[Key="advanced_node_root"]}[Data],​
-    custom_tql_query = advanced_node_root{[Key="custom_tql_query"]}[Data],​
-    generateTQL = (start,end) =>​
-        let ​
-            start=DateTime.ToText(startDateTime,"yyyy-MM-ddThh:mm:ssZ"),​
-            end=DateTime.ToText(endDateTime,"yyyy-MM-ddThh:mm:ssZ"),​
-
-            tql = Text.Combine({​
-            "[input ~/Fleet/<IMO number>/Aux_Engines/1/Fuel_Flow;", ​
-            "input ~/Fleet/<IMO number>/Aux_Engines/1/Generator_Power;",​
-            "input ~/Fleet/<IMO number>/Aux_Engines/2/Generator_Power;",​         
-            "|> combine |> takefrom ", start,"|>taketo",end," |> aggregate 1m",​
-            "|> map 'v[0]' 'v[3]' 'v[6]' 'v[9]'  "             ​
-               })​
-        in​
-            tql,​
-
-    kpis = Table.AddColumn( Source, "KPIS", each  custom_tql_query(generateTQL(startDateTime, endDateTime))),​
-    Galore_Data_Root = kpis{[Key="Galore_Data_Root"]}[KPIS],​
-
-    #"Removed Columns" = Table.RemoveColumns(#"Galore_Data_Root",{"Full Path"}),​
-    ColumnNames = Table.ColumnNames(#"Removed Columns"),​
-    #"Renamed Columns" = Table.RenameColumns( #"Removed Columns",{​
-    {ColumnNames{1}, "Vessel name"},​
-    {ColumnNames{2}, "AE Fuel Flow"},​
-    {ColumnNames{3}, "AE1 Power"},​
-    {ColumnNames{4}, "AE2 Power"}})​
-in​
-    #"Renamed Columns" ​
-```
-
-Explanation of the query:
-
-* **Start** and **End** represents the Start and End input parameters.
-    ```TQL
-    let​
-    Source = VesselInsight.Contents(),​
-    advanced_node_root = Source{[Key="advanced_node_root"]}[Data],​
-    custom_tql_query = advanced_node_root{[Key="custom_tql_query"]}[Data],​
-    generateTQL = (start,end) =>​
-        let ​
-            start=DateTime.ToText(startDateTime,"yyyy-MM-ddThh:mm:ssZ"),​
-            end=DateTime.ToText(endDateTime,"yyyy-MM-ddThh:mm:ssZ"),​
-    ```
-
-* Add the **path** for each tag that you want to combine in this format:
-~/Fleet/IMO number/System/Sub-system/Component
-
-    ```TQL
-    tql = Text.Combine({​
-            "[input ~/Fleet/<IMO number>/Aux_Engines/1/Fuel_Flow;", ​
-            "input ~/Fleet/<IMO number>/Aux_Engines/1/Generator_Power;",​
-            "input ~/Fleet/<IMO number>/Aux_Engines/2/Generator_Power;",​         
-            "|> combine |> takefrom ", start,"|>taketo",end," |> aggregate 1m",​
-    ```
-
-* For each tag, by default, these columns are returned in this order: max, min, avg and count. If you only want avg, you need to **specify the column** (vector), n+3 element for each tag (every 3 element).
-    ```
-     "|> map 'v[0]' 'v[3]' 'v[6]' 'v[9]'  "             ​
-               })​
-    in​
-        tql,​
-    ```
-
-* **Rename** the columns
-    ```TQL
-      ColumnNames = Table.ColumnNames(#"Removed Columns"),​
-        #"Renamed Columns" = Table.RenameColumns( #"Removed Columns",{​
-        {ColumnNames{1}, "Vessel name"},​
-        {ColumnNames{2}, "AE Fuel Flow"},​
-        {ColumnNames{3}, "AE1 Power"},​
-        {ColumnNames{4}, "AE2 Power"}})​
-    in​
-        #"Renamed Columns" ​
-    ```
+These input parameters are:
+* **Comma Separated IMOs** - Input one or multiple IMO numbers you want voyage data for
+* **Start** (Time:Period), e.g. 2019-10-08T00:00:00Z (optional) - filter on range by inserting start date and time here. Possible to set "yesterday" and "today". Requires setting Time: Period.
+* **End** (Time:Period), e.g. 2019-10-08T01:00:00Z (optional) -  filter on range by inserting end date and time here. Possible to set "today" and "now". Requires setting Time: Period. 
 
 ## Limitations and issues
 
